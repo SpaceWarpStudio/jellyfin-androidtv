@@ -22,6 +22,7 @@ import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.flow.filterNotNull
 import org.jellyfin.androidtv.R
+import org.jellyfin.androidtv.auth.pin.UserPinRepository
 import org.jellyfin.androidtv.auth.repository.SessionRepository
 import org.jellyfin.androidtv.auth.repository.UserRepository
 import org.jellyfin.androidtv.ui.NowPlayingComposable
@@ -49,6 +50,7 @@ enum class MainToolbarActiveButton {
 	User,
 	Home,
 	Search,
+	Download,
 
 	None,
 }
@@ -79,8 +81,14 @@ private fun MainToolbar(
 	val navigationRepository = koinInject<NavigationRepository>()
 	val mediaManager = koinInject<MediaManager>()
 	val sessionRepository = koinInject<SessionRepository>()
+	val userPinRepository = koinInject<UserPinRepository>()
 	val settingsViewModel = koinActivityViewModel<SettingsViewModel>()
 	val activity = LocalActivity.current
+	val session by sessionRepository.currentSession.collectAsState()
+	val showDownloadTab = remember(session) {
+		val current = session ?: return@remember false
+		userPinRepository.isPinRequired(current.serverId, current.userId)
+	}
 	val activeButtonColors = ButtonDefaults.colors(
 		containerColor = JellyfinTheme.colorScheme.buttonActive,
 		contentColor = JellyfinTheme.colorScheme.onButtonActive,
@@ -151,6 +159,24 @@ private fun MainToolbar(
 						colors = if (activeButton == MainToolbarActiveButton.Search) activeButtonColors else ButtonDefaults.colors(),
 						content = { Text(stringResource(R.string.lbl_search)) }
 					)
+					if (showDownloadTab) {
+						Button(
+							onClick = {
+								if (activeButton != MainToolbarActiveButton.Download) {
+									navigationRepository.navigate(
+										Destinations.download,
+										replace = true,
+									)
+								}
+							},
+							colors = if (activeButton == MainToolbarActiveButton.Download) {
+								activeButtonColors
+							} else {
+								ButtonDefaults.colors()
+							},
+							content = { Text(stringResource(R.string.lbl_download)) }
+						)
+					}
 				}
 			}
 		},

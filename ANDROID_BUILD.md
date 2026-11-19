@@ -35,7 +35,9 @@ Never run ./gradlew on the host. The monitor (and build.sh) use image nexus-andr
 Logs/status: /srv/android-build/logs/current/
 APK on success (name may include a version suffix):
   app/build/outputs/apk/debug/*.apk
-Tell the user that path when the build succeeds.
+Tell the user a **project-relative** markdown link so DevPort stays in-sandbox, e.g.
+  [jellyfin-androidtv-…-debug.apk](app/build/outputs/apk/debug/jellyfin-androidtv-…-debug.apk)
+Do not hand off absolute `/home/warp/...` paths as the primary download link.
 
 Do not commit secrets or release keystores unless asked.
 Do not start an emulator or install to a device unless asked.
