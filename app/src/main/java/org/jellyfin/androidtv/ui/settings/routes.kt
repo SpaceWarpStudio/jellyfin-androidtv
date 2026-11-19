@@ -7,9 +7,11 @@ import org.jellyfin.androidtv.ui.settings.screen.SettingsDeveloperScreen
 import org.jellyfin.androidtv.ui.settings.screen.SettingsMainScreen
 import org.jellyfin.androidtv.ui.settings.screen.SettingsTelemetryScreen
 import org.jellyfin.androidtv.ui.settings.screen.about.SettingsAboutScreen
+import org.jellyfin.androidtv.ui.settings.screen.authentication.PinSettingsMode
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationAutoSignInScreen
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationScreen
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationServerScreen
+import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationServerUserPinScreen
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationServerUserScreen
 import org.jellyfin.androidtv.ui.settings.screen.authentication.SettingsAuthenticationSortByScreen
 import org.jellyfin.androidtv.ui.settings.screen.customization.SettingsCustomizationBackdropScreen
@@ -68,6 +70,7 @@ object Routes {
 	const val AUTHENTICATION_FROM_LOGIN = "/authentication+login"
 	const val AUTHENTICATION_SERVER = "/authentication/server/{serverId}"
 	const val AUTHENTICATION_SERVER_USER = "/authentication/server/{serverId}/user/{userId}"
+	const val AUTHENTICATION_SERVER_USER_PIN = "/authentication/server/{serverId}/user/{userId}/pin/{mode}"
 	const val AUTHENTICATION_SORT_BY = "/authentication/sort-by"
 	const val AUTHENTICATION_AUTO_SIGN_IN = "/authentication/auto-sign-in"
 	const val CUSTOMIZATION = "/customization"
@@ -141,6 +144,13 @@ val routes = mapOf<String, RouteComposable>(
 		SettingsAuthenticationServerUserScreen(
 			serverId = context.parameters["serverId"]?.toUUIDOrNull()!!,
 			userId = context.parameters["userId"]?.toUUIDOrNull()!!
+		)
+	},
+	Routes.AUTHENTICATION_SERVER_USER_PIN to { context ->
+		SettingsAuthenticationServerUserPinScreen(
+			serverId = context.parameters["serverId"]?.toUUIDOrNull()!!,
+			userId = context.parameters["userId"]?.toUUIDOrNull()!!,
+			mode = PinSettingsMode.fromRouteParameter(context.parameters["mode"])!!,
 		)
 	},
 	Routes.AUTHENTICATION_SORT_BY to {

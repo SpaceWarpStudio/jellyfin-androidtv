@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.jellyfin.androidtv.auth.model.Server
+import org.jellyfin.androidtv.auth.pin.UserPinRepository
 import org.jellyfin.androidtv.auth.store.AuthenticationPreferences
 import org.jellyfin.androidtv.auth.store.AuthenticationStore
 import org.jellyfin.androidtv.preference.PreferencesRepository
@@ -56,6 +57,7 @@ class SessionRepositoryImpl(
 	private val userRepository: UserRepository,
 	private val serverRepository: ServerRepository,
 	private val telemetryPreferences: TelemetryPreferences,
+	private val userPinRepository: UserPinRepository,
 ) : SessionRepository {
 	private val currentSessionMutex = Mutex()
 	private val _currentSession = MutableStateFlow<Session?>(null)
@@ -75,11 +77,16 @@ class SessionRepositoryImpl(
 			when {
 				alwaysAuthenticate -> destroyCurrentSession()
 				autoLoginBehavior == DISABLED -> destroyCurrentSession()
-				autoLoginBehavior == LAST_USER && !destroyOnly -> setCurrentSession(createLastUserSession())
+				autoLoginBehavior == LAST_USER && !destroyOnly -> {
+					setCurrentSessionIfPinNotRequired(createLastUserSession())
+				}
+
 				autoLoginBehavior == SPECIFIC_USER && !destroyOnly -> {
 					val serverId = authenticationPreferences[AuthenticationPreferences.autoLoginServerId].toUUIDOrNull()
 					val userId = authenticationPreferences[AuthenticationPreferences.autoLoginUserId].toUUIDOrNull()
-					if (serverId != null && userId != null) setCurrentSession(createUserSession(serverId, userId))
+					if (serverId != null && userId != null) {
+						setCurrentSessionIfPinNotRequired(createUserSession(serverId, userId))
+					}
 				}
 			}
 
@@ -116,6 +123,20 @@ class SessionRepositoryImpl(
 		serverRepository.setCurrentServer(null)
 		_currentSession.value = null
 		_state.value = SessionRepositoryState.READY
+	}
+
+	/**
+	 * Auto-login only when the account has no PIN. PIN-protected accounts always start at the
+	 * profile picker so the user can choose any account.
+	 */
+	private suspend fun setCurrentSessionIfPinNotRequired(session: Session?) {
+		if (session != null && userPinRepository.isPinRequired(session.serverId, session.userId)) {
+			Timber.i("Skipping auto-login for PIN-protected user ${session.userId}")
+			destroyCurrentSession()
+			return
+		}
+
+		setCurrentSession(session)
 	}
 
 	private suspend fun setCurrentSession(session: Session?): Boolean {

@@ -13,4 +13,9 @@ data class AuthenticationStoreUser(
 	@SerialName("last_used") val lastUsed: Long = Instant.now().toEpochMilli(),
 	@SerialName("image_tag") val imageTag: String? = null,
 	@SerialName("access_token") val accessToken: String? = null,
+	/**
+	 * Salted local PIN hash. When non-null, unlocking this stored account requires PIN entry
+	 * before the access token may be used. Never synced to the server.
+	 */
+	@SerialName("pin_hash") val pinHash: String? = null,
 )

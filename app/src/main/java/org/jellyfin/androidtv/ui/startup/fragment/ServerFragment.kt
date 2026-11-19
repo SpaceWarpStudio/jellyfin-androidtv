@@ -24,7 +24,9 @@ import org.jellyfin.androidtv.R
 import org.jellyfin.androidtv.auth.model.ApiClientErrorLoginState
 import org.jellyfin.androidtv.auth.model.AuthenticatedState
 import org.jellyfin.androidtv.auth.model.AuthenticatingState
+import org.jellyfin.androidtv.auth.model.InvalidPinState
 import org.jellyfin.androidtv.auth.model.PrivateUser
+import org.jellyfin.androidtv.auth.model.RequirePinState
 import org.jellyfin.androidtv.auth.model.RequireSignInState
 import org.jellyfin.androidtv.auth.model.Server
 import org.jellyfin.androidtv.auth.model.ServerUnavailableState
@@ -75,12 +77,18 @@ class ServerFragment : Fragment() {
 			startupViewModel.authenticate(server, user).onEach { state ->
 				when (state) {
 					// Ignored states
-					AuthenticatingState -> Unit
-					AuthenticatedState -> Unit
+					AuthenticatingState,
+					AuthenticatedState,
+					InvalidPinState -> Unit
 					// Actions
 					RequireSignInState -> navigateFragment<UserLoginFragment>(createBundle {
 						putString(UserLoginFragment.ARG_SERVER_ID, server.id.toString())
 						putString(UserLoginFragment.ARG_USERNAME, user.name)
+					})
+
+					is RequirePinState -> navigateFragment<UserPinFragment>(createBundle {
+						putString(UserPinFragment.ARG_SERVER_ID, server.id.toString())
+						putString(UserPinFragment.ARG_USER_ID, state.user.id.toString())
 					})
 					// Errors
 					ServerUnavailableState,

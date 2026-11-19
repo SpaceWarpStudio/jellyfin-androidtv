@@ -72,5 +72,8 @@ object Utils : KoinComponent {
 	fun canManageRecordings(user: UserDto?): Boolean = user?.policy?.enableLiveTvManagement == true
 
 	@JvmStatic
+	fun isUserAdmin(user: UserDto?): Boolean = user?.policy?.isAdministrator == true
+
+	@JvmStatic
 	fun uuidOrNull(string: String?): UUID? = string?.toUUIDOrNull()
 }
