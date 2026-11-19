@@ -44,6 +44,8 @@ requests! If you have a larger feature in mind please open an issue so we can di
 
 ## Building
 
+**On this Nexus / DevPort host:** do not use Android Studio or host `./gradlew`. Follow [`ANDROID_BUILD.md`](ANDROID_BUILD.md) and use `monitor-build.sh` (detached Docker build). Attached agent builds get killed with the chat session and corrupt Gradle locks.
+
 The app uses Gradle and requires the Android SDK. We recommend using Android Studio, which includes all required dependencies, for
 development and building. For manual building without Android Studio make sure a compatible JDK and Android SDK are installed and in your
 PATH, then use the Gradle wrapper (`./gradlew`) to build the project with the `assembleDebug` Gradle task to generate an apk file:

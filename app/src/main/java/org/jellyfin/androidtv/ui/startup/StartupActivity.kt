@@ -2,8 +2,10 @@ package org.jellyfin.androidtv.ui.startup
 
 import android.Manifest
 import android.app.SearchManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
@@ -43,8 +45,10 @@ import org.jellyfin.androidtv.ui.startup.fragment.SelectServerFragment
 import org.jellyfin.androidtv.ui.startup.fragment.ServerFragment
 import org.jellyfin.androidtv.ui.startup.fragment.SplashFragment
 import org.jellyfin.androidtv.ui.startup.fragment.StartupToolbarFragment
+import org.jellyfin.androidtv.util.PhysicalKeyboard
 import org.jellyfin.androidtv.util.applyTheme
 import org.jellyfin.androidtv.util.createBundle
+import org.jellyfin.androidtv.util.isFromPhysicalAlphabeticKeyboard
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.userLibraryApi
 import org.jellyfin.sdk.model.serializer.toUUIDOrNull
@@ -83,6 +87,16 @@ class StartupActivity : FragmentActivity() {
 		} else {
 			onPermissionsGranted()
 		}
+	}
+
+	override fun attachBaseContext(newBase: Context) {
+		super.attachBaseContext(PhysicalKeyboard.wrapContext(newBase))
+	}
+
+	override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+		// Remote / DPAD only — ignore USB/Bluetooth alphabetic keyboards.
+		if (event.isFromPhysicalAlphabeticKeyboard()) return true
+		return super.dispatchKeyEvent(event)
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {

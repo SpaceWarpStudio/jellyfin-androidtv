@@ -1,5 +1,6 @@
 package org.jellyfin.androidtv.ui.browsing
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
@@ -29,7 +30,9 @@ import org.jellyfin.androidtv.ui.navigation.NavigationRepository
 import org.jellyfin.androidtv.ui.screensaver.InAppScreensaver
 import org.jellyfin.androidtv.ui.settings.compat.MainActivitySettings
 import org.jellyfin.androidtv.ui.startup.StartupActivity
+import org.jellyfin.androidtv.util.PhysicalKeyboard
 import org.jellyfin.androidtv.util.applyTheme
+import org.jellyfin.androidtv.util.isFromPhysicalAlphabeticKeyboard
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import timber.log.Timber
@@ -40,6 +43,16 @@ class MainActivity : FragmentActivity() {
 	private val userRepository by inject<UserRepository>()
 	private val interactionTrackerViewModel by viewModel<InteractionTrackerViewModel>()
 	private val workManager by inject<WorkManager>()
+
+	override fun attachBaseContext(newBase: Context) {
+		super.attachBaseContext(PhysicalKeyboard.wrapContext(newBase))
+	}
+
+	override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+		// Remote / DPAD only — ignore USB/Bluetooth alphabetic keyboards.
+		if (event.isFromPhysicalAlphabeticKeyboard()) return true
+		return super.dispatchKeyEvent(event)
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		applyTheme()

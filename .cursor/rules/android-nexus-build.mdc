@@ -1,0 +1,25 @@
+---
+description: How to build this Android app on the headless Nexus host
+alwaysApply: true
+---
+
+# Nexus Android builds
+
+This host is headless. Do not use Android Studio, a host JDK/SDK, or an emulator.
+
+Read `ANDROID_BUILD.md` at the project root before building.
+
+**Required:** use the detached monitor — never attach a long Gradle/`build.sh` run to the agent shell (blocking or background+notify). Session cut-off kills the build and corrupts Gradle locks.
+
+```bash
+/home/warp/nexus/containers/android-build/monitor-build.sh start /home/warp/Dev/other/jellyfin-androidtv assembleDebug
+/home/warp/nexus/containers/android-build/monitor-build.sh status
+```
+
+After a killed run or lock errors:
+
+```bash
+/home/warp/nexus/containers/android-build/monitor-build.sh clean-stale-locks /home/warp/Dev/other/jellyfin-androidtv
+```
+
+Logs: `/srv/android-build/logs/current/`. APK: `app/build/outputs/apk/debug/*.apk`.

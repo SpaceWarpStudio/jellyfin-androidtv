@@ -1,8 +1,10 @@
 package org.jellyfin.androidtv.ui.playback
 
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
@@ -18,7 +20,9 @@ import org.jellyfin.androidtv.data.repository.ExternalAppRepository
 import org.jellyfin.androidtv.ui.playback.external.ExternalPlayData
 import org.jellyfin.androidtv.ui.playback.external.ExternalPlayResult
 import org.jellyfin.androidtv.ui.playback.external.ExternalPlayerApi
+import org.jellyfin.androidtv.util.PhysicalKeyboard
 import org.jellyfin.androidtv.util.componentName
+import org.jellyfin.androidtv.util.isFromPhysicalAlphabeticKeyboard
 import org.jellyfin.androidtv.util.sdk.getDisplayName
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.playStateApi
@@ -58,6 +62,15 @@ class ExternalPlayerActivity : FragmentActivity() {
 	private val api by inject<ApiClient>()
 
 	private var resultJob: Job? = null
+
+	override fun attachBaseContext(newBase: Context) {
+		super.attachBaseContext(PhysicalKeyboard.wrapContext(newBase))
+	}
+
+	override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+		if (event.isFromPhysicalAlphabeticKeyboard()) return true
+		return super.dispatchKeyEvent(event)
+	}
 
 	private val playVideoLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
 		Timber.i("Playback finished with result code ${result.resultCode}")
