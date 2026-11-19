@@ -1,5 +1,7 @@
 package org.jellyfin.androidtv.di
 
+import org.jellyfin.androidtv.auth.pin.UserPinRepository
+import org.jellyfin.androidtv.auth.pin.UserPinRepositoryImpl
 import org.jellyfin.androidtv.auth.repository.AuthenticationRepository
 import org.jellyfin.androidtv.auth.repository.AuthenticationRepositoryImpl
 import org.jellyfin.androidtv.auth.repository.ServerRepository
@@ -15,14 +17,15 @@ import org.koin.dsl.module
 val authModule = module {
 	single { AuthenticationStore(get()) }
 	single { AuthenticationPreferences(get()) }
+	single<UserPinRepository> { UserPinRepositoryImpl(get()) }
 
 	single<AuthenticationRepository> {
-		AuthenticationRepositoryImpl(get(), get(), get(), get(), get(), get(defaultDeviceInfo))
+		AuthenticationRepositoryImpl(get(), get(), get(), get(), get(), get(defaultDeviceInfo), get())
 	}
 	single<ServerRepository> { ServerRepositoryImpl(get(), get()) }
 	single<ServerUserRepository> { ServerUserRepositoryImpl(get(), get()) }
 	single<SessionRepository> {
-		SessionRepositoryImpl(get(), get(), get(), get(), get(defaultDeviceInfo), get(), get(), get())
+		SessionRepositoryImpl(get(), get(), get(), get(), get(defaultDeviceInfo), get(), get(), get(), get())
 	}
 
 	factory {

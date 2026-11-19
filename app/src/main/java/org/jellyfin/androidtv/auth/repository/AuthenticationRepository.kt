@@ -13,14 +13,17 @@ import org.jellyfin.androidtv.auth.model.AuthenticatingState
 import org.jellyfin.androidtv.auth.model.AuthenticationStoreUser
 import org.jellyfin.androidtv.auth.model.AutomaticAuthenticateMethod
 import org.jellyfin.androidtv.auth.model.CredentialAuthenticateMethod
+import org.jellyfin.androidtv.auth.model.InvalidPinState
 import org.jellyfin.androidtv.auth.model.LoginState
 import org.jellyfin.androidtv.auth.model.PrivateUser
 import org.jellyfin.androidtv.auth.model.QuickConnectAuthenticateMethod
+import org.jellyfin.androidtv.auth.model.RequirePinState
 import org.jellyfin.androidtv.auth.model.RequireSignInState
 import org.jellyfin.androidtv.auth.model.Server
 import org.jellyfin.androidtv.auth.model.ServerUnavailableState
 import org.jellyfin.androidtv.auth.model.ServerVersionNotSupported
 import org.jellyfin.androidtv.auth.model.User
+import org.jellyfin.androidtv.auth.pin.UserPinRepository
 import org.jellyfin.androidtv.auth.store.AuthenticationPreferences
 import org.jellyfin.androidtv.auth.store.AuthenticationStore
 import org.jellyfin.androidtv.util.apiclient.JellyfinImage
@@ -47,6 +50,7 @@ import java.time.Instant
  */
 interface AuthenticationRepository {
 	fun authenticate(server: Server, method: AuthenticateMethod): Flow<LoginState>
+	fun authenticateWithPin(server: Server, user: User, pin: String): Flow<LoginState>
 	fun logout(user: User): Boolean
 	fun getUserImageUrl(server: Server, user: User): String?
 }
@@ -58,12 +62,26 @@ class AuthenticationRepositoryImpl(
 	private val userApiClient: ApiClient,
 	private val authenticationPreferences: AuthenticationPreferences,
 	private val defaultDeviceInfo: DeviceInfo,
+	private val userPinRepository: UserPinRepository,
 ) : AuthenticationRepository {
 	override fun authenticate(server: Server, method: AuthenticateMethod): Flow<LoginState> {
 		return when (method) {
 			is AutomaticAuthenticateMethod -> authenticateAutomatic(server, method.user)
 			is CredentialAuthenticateMethod -> authenticateCredential(server, method.username, method.password)
 			is QuickConnectAuthenticateMethod -> authenticateQuickConnect(server, method.secret)
+		}
+	}
+
+	override fun authenticateWithPin(server: Server, user: User, pin: String): Flow<LoginState> {
+		if (!userPinRepository.verifyPin(server.id, user.id, pin)) {
+			return flowOf(InvalidPinState)
+		}
+
+		val authStoreUser = authenticationStore.getUser(server.id, user.id)
+		return if (authStoreUser?.accessToken != null) {
+			authenticateToken(server, user.withToken(authStoreUser.accessToken))
+		} else {
+			flowOf(RequireSignInState)
 		}
 	}
 
@@ -74,10 +92,11 @@ class AuthenticationRepositoryImpl(
 		if (authenticationPreferences[AuthenticationPreferences.alwaysAuthenticate]) return flowOf(RequireSignInState)
 
 		val authStoreUser = authenticationStore.getUser(server.id, user.id)
-		// Try login with access token
-		return if (authStoreUser?.accessToken != null) authenticateToken(server, user.withToken(authStoreUser.accessToken))
-		// Require login
-		else flowOf(RequireSignInState)
+		return when {
+			authStoreUser?.accessToken == null -> flowOf(RequireSignInState)
+			userPinRepository.isPinRequired(server.id, user.id) -> flowOf(RequirePinState(user))
+			else -> authenticateToken(server, user.withToken(authStoreUser.accessToken))
+		}
 	}
 
 	private fun authenticateCredential(server: Server, username: String, password: String) = flow {
