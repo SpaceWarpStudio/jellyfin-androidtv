@@ -7,3 +7,8 @@ local.properties
 .kotlin/
 build/
 captures/
+
+# Local Cursor / DevPort agent state (keep committed rules only)
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
